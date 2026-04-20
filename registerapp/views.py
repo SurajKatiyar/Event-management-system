@@ -6,10 +6,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.mail import EmailMessage
 from django.core.paginator import Paginator
+from django.db import IntegrityError, transaction
 from django.db.models import Count, ExpressionWrapper, F, IntegerField
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from .forms import EventForm, RegistrationForm, SignupForm
 from .models import Category, City, Country, SavedEvent, event as Event, registration as Registration
@@ -115,8 +117,8 @@ def register_event(request, event_id):
             messages.error(request, 'Registration deadline has passed for this event.')
             return redirect('event_detail', event_id=event.id)
 
-    if Registration.objects.filter(event=event, user=request.user).exists():
-        existing_registration = Registration.objects.filter(event=event, user=request.user).first()
+    existing_registration = Registration.objects.filter(event=event, user=request.user).first()
+    if existing_registration:
         messages.info(request, 'You are already registered for this event.')
         return redirect('ticket', ticket_id=existing_registration.ticket_id)
 
@@ -136,8 +138,8 @@ def complete_registration(request, event_id):
         messages.error(request, 'Registration deadline has passed for this event.')
         return redirect('event_detail', event_id=event.id)
 
-    if Registration.objects.filter(event=event, user=request.user).exists():
-        existing_registration = Registration.objects.filter(event=event, user=request.user).first()
+    existing_registration = Registration.objects.filter(event=event, user=request.user).first()
+    if existing_registration:
         messages.info(request, 'You already have a ticket for this event.')
         return redirect('ticket', ticket_id=existing_registration.ticket_id)
 
@@ -149,10 +151,31 @@ def complete_registration(request, event_id):
     if request.method == 'POST':
         form = RegistrationForm(request.POST, event=event)
         if form.is_valid():
-            reg = form.save(commit=False)
-            reg.event = event
-            reg.user = request.user
-            reg.save()
+            with transaction.atomic():
+                locked_event = Event.objects.select_for_update().get(id=event.id)
+
+                if locked_event.registration_deadline and locked_event.registration_deadline < timezone.localdate():
+                    messages.error(request, 'Registration deadline has passed for this event.')
+                    return redirect('event_detail', event_id=locked_event.id)
+
+                existing_registration = Registration.objects.filter(event=locked_event, user=request.user).first()
+                if existing_registration:
+                    messages.info(request, 'You already have a ticket for this event.')
+                    return redirect('ticket', ticket_id=existing_registration.ticket_id)
+
+                total_registrations = Registration.objects.filter(event=locked_event).count()
+                if locked_event.capacity and total_registrations >= locked_event.capacity:
+                    messages.error(request, 'This event has reached full capacity.')
+                    return redirect('event_detail', event_id=locked_event.id)
+
+                reg = form.save(commit=False)
+                reg.event = locked_event
+                reg.user = request.user
+                try:
+                    reg.save()
+                except IntegrityError:
+                    messages.error(request, 'A registration with this email already exists for this event.')
+                    return redirect('complete_registration', event_id=locked_event.id)
 
             email_subject = 'Event Ticket'
             email_body = (
@@ -305,11 +328,16 @@ def export_attendees_csv(request, event_id):
 
 
 @login_required
+@require_POST
 def check_in_attendee(request, ticket_id):
     registration = get_object_or_404(Registration.objects.select_related('event'), ticket_id=ticket_id)
     if registration.event.organizer_id != request.user.id:
         messages.error(request, 'Only organizer can check in attendees.')
         return redirect('event_list')
+
+    if registration.is_checked_in:
+        messages.info(request, f'{registration.name} is already checked in.')
+        return redirect('event_attendees', event_id=registration.event.id)
 
     registration.is_checked_in = True
     registration.save(update_fields=['is_checked_in'])
@@ -326,14 +354,14 @@ def organizer_profile(request, organizer_id):
 
 
 @login_required
+@require_POST
 def toggle_bookmark(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    saved_item = SavedEvent.objects.filter(user=request.user, event=event).first()
-    if saved_item:
+    saved_item, created = SavedEvent.objects.get_or_create(user=request.user, event=event)
+    if not created:
         saved_item.delete()
         messages.success(request, 'Event removed from saved list.')
     else:
-        SavedEvent.objects.create(user=request.user, event=event)
         messages.success(request, 'Event saved successfully.')
 
     next_url = request.POST.get('next')
@@ -391,6 +419,11 @@ def logout_view(request):
     return redirect('event_list')
 
 
+@login_required
 def registered_users(request):
+    if not request.user.is_staff:
+        messages.error(request, 'Only staff users can access registered users list.')
+        return redirect('event_list')
+
     registrations = Registration.objects.select_related('event').order_by('event__date', 'name')
     return render(request, 'users.html', {'registrations': registrations})

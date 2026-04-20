@@ -1,0 +1,4 @@
+-r requirements-basic.txt
+
+# Example production app server
+gunicorn==23.0.0

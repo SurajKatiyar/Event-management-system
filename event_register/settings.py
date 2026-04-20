@@ -10,7 +10,22 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+
+def _env_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def _env_list(name, default=''):
+    value = os.getenv(name, default)
+    if not value:
+        return []
+    return [item.strip() for item in value.split(',') if item.strip()]
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +35,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!j#+$hqqa1&#@!8y2um%2a$yw)=i7xlnk_#0u=()pijo#!l_n&'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-!j#+$hqqa1&#@!8y2um%2a$yw)=i7xlnk_#0u=()pijo#!l_n&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = _env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = _env_list('DJANGO_ALLOWED_HOSTS', '')
 
 
 # Application definition
@@ -121,8 +136,18 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = os.getenv('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+
+SITE_BASE_URL = os.getenv('SITE_BASE_URL', 'http://127.0.0.1:8000').rstrip('/')
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+
+if _env_bool('DJANGO_PRO_MODE', False):
+    from .pro_layer.security import apply_pro_security
+
+    apply_pro_security(globals())

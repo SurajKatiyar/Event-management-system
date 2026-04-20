@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.utils import timezone
+
 from .models import City, Country, event as Event, registration as Registration
 
 
@@ -36,10 +38,17 @@ class RegistrationForm(forms.ModelForm):
         self.fields['note'].required = False
 
     def clean_email(self):
-        email = self.cleaned_data['email']
+        email = self.cleaned_data['email'].strip().lower()
         if self.event and Registration.objects.filter(event=self.event, email__iexact=email).exists():
             raise forms.ValidationError('This email is already registered for this event.')
         return email
+
+    def clean_phone(self):
+        phone = self.cleaned_data['phone'].strip()
+        digits_only = ''.join(ch for ch in phone if ch.isdigit())
+        if len(digits_only) < 10 or len(digits_only) > 15:
+            raise forms.ValidationError('Please enter a valid phone number (10 to 15 digits).')
+        return phone
 
     class Meta:
         model = Registration
@@ -94,3 +103,27 @@ class EventForm(forms.ModelForm):
             'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'registration_deadline': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
+
+    def clean_capacity(self):
+        capacity = self.cleaned_data.get('capacity')
+        if capacity is not None and capacity < 1:
+            raise forms.ValidationError('Capacity must be at least 1.')
+        return capacity
+
+    def clean(self):
+        cleaned_data = super().clean()
+        event_date = cleaned_data.get('date')
+        registration_deadline = cleaned_data.get('registration_deadline')
+        country = cleaned_data.get('country')
+        city = cleaned_data.get('city')
+
+        if event_date and event_date < timezone.localdate():
+            self.add_error('date', 'Event date cannot be in the past.')
+
+        if event_date and registration_deadline and registration_deadline > event_date:
+            self.add_error('registration_deadline', 'Registration deadline cannot be after event date.')
+
+        if city and country and city.country_id != country.id:
+            self.add_error('city', 'Selected city does not belong to selected country.')
+
+        return cleaned_data

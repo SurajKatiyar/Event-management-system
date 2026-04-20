@@ -2,6 +2,7 @@ import secrets
 from io import BytesIO
 
 import qrcode
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.db import models
@@ -108,7 +109,7 @@ class registration(models.Model):
         super().save(*args, **kwargs)
 
         if not self.qr_code:
-            qr_text = f"http://127.0.0.1:8000/ticket/{self.ticket_id}/"
+            qr_text = f"{settings.SITE_BASE_URL}/ticket/{self.ticket_id}/"
             qr_img = qrcode.make(qr_text)
 
             buffer = BytesIO()

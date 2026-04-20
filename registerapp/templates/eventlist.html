@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}EventHub | Discover Events{% endblock %}
+{% block hero %}
+<section class="hero">
+  <div class="container text-center">
+    <h1 class="fw-bold page-title mb-3">Discover Events Near You</h1>
+    <p class="opacity-75 mb-0">Workshops, hackathons, seminars, community meetups and more.</p>
+  </div>
+</section>
+{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <form method="get" class="row g-3 align-items-end mb-5">
+      <div class="col-12 col-lg-3">
+        <label class="form-label muted-text">Search</label>
+        <input type="text" name="q" class="form-control" value="{{ search_text }}" placeholder="Search event title">
+      </div>
+      <div class="col-12 col-md-6 col-lg-2">
+        <label class="form-label muted-text">Category</label>
+        <select name="category" class="form-select">
+          <option value="">All</option>
+          {% for category in categories %}
+            <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:'s' %}selected{% endif %}>{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-6 col-lg-2">
+        <label class="form-label muted-text">Country</label>
+        <select name="country" class="form-select" onchange="this.form.submit()">
+          <option value="">All</option>
+          {% for country in countries %}
+            <option value="{{ country.id }}" {% if selected_country == country.id|stringformat:'s' %}selected{% endif %}>{{ country.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-6 col-lg-2">
+        <label class="form-label muted-text">City</label>
+        <select name="city" class="form-select">
+          <option value="">All</option>
+          {% for city in cities %}
+            <option value="{{ city.id }}" {% if selected_city == city.id|stringformat:'s' %}selected{% endif %}>{{ city.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-6 col-lg-2">
+        <label class="form-label muted-text">Sort By</label>
+        <select name="sort" class="form-select">
+          <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest</option>
+          <option value="event_date" {% if selected_sort == 'event_date' %}selected{% endif %}>Event date</option>
+          <option value="popular" {% if selected_sort == 'popular' %}selected{% endif %}>Most popular</option>
+          <option value="seats_left" {% if selected_sort == 'seats_left' %}selected{% endif %}>Seats left</option>
+        </select>
+      </div>
+      <div class="col-12 col-lg-1 d-grid">
+        <button type="submit" class="btn btn-modern">Go</button>
+      </div>
+    </form>
+
+    <div class="row g-4">
+      {% for event in events %}
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card card-modern h-100 overflow-hidden">
+            {% if event.image %}
+              <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 220px; object-fit: cover;">
+            {% else %}
+              <div style="height: 220px; background: linear-gradient(135deg,#e2e8f0,#f8fafc);"></div>
+            {% endif %}
+            <div class="card-body p-4 d-flex flex-column">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge-modern">{% if event.category %}{{ event.category.name }}{% else %}General{% endif %}</span>
+                <span class="badge rounded-pill {{ event.status_badge_class }}">{{ event.status_label }}</span>
+              </div>
+              <h5 class="fw-semibold mb-2">{{ event.title }}</h5>
+              <p class="muted-text mb-2"><strong>Date:</strong> {{ event.date }}</p>
+              <p class="muted-text mb-3"><strong>Location:</strong> {% if event.city %}{{ event.city.name }}{% else %}TBA{% endif %}</p>
+              <p class="text-secondary mb-4">{{ event.description|truncatewords:16 }}</p>
+              <div class="mt-auto d-grid gap-2">
+                <a href="{% url 'event_detail' event.id %}" class="btn btn-modern">View Details</a>
+                {% if user.is_authenticated %}
+                  <form method="post" action="{% url 'toggle_bookmark' event.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    {% if event.id in saved_event_ids %}
+                      <button class="btn btn-outline-secondary w-100" type="submit">Saved</button>
+                    {% else %}
+                      <button class="btn btn-outline-secondary w-100" type="submit">Save Event</button>
+                    {% endif %}
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <div class="col-12">
+          <div class="card card-modern">
+            <div class="card-body text-center p-5">
+              <h5 class="fw-semibold mb-2">No events found</h5>
+              <p class="muted-text mb-0">Try adjusting the filters or search text.</p>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+      <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?q={{ search_text }}&category={{ selected_category }}&country={{ selected_country }}&city={{ selected_city }}&sort={{ selected_sort }}&page={{ page_obj.previous_page_number }}">Previous</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+          {% endif %}
+          <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+          {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?q={{ search_text }}&category={{ selected_category }}&country={{ selected_country }}&city={{ selected_city }}&sort={{ selected_sort }}&page={{ page_obj.next_page_number }}">Next</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

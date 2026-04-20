@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Delete Event{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-6">
+        <div class="card card-modern">
+          <div class="card-body p-4 p-lg-5">
+            <h2 class="page-title text-danger mb-3">Delete Event</h2>
+            <p class="mb-1">Are you sure you want to delete this event?</p>
+            <p class="fw-semibold">{{ event.title }}</p>
+            <p class="muted-text small">This action will also delete registrations for this event.</p>
+            <form method="post" class="d-flex gap-2 mt-4">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger">Yes, Delete</button>
+              <a href="{% url 'my_events' %}" class="btn btn-outline-secondary">Cancel</a>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

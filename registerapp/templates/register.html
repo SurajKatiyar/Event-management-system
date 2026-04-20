@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Register</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+	<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+		<div class="container">
+			<a class="navbar-brand" href="{% url 'event_list' %}">Event Register</a>
+			<div class="navbar-nav">
+				<a class="nav-link" href="{% url 'event_list' %}">Home</a>
+				{% if user.is_authenticated %}
+					<a class="nav-link" href="{% url 'logout' %}">Logout</a>
+				{% else %}
+					<a class="nav-link" href="{% url 'login' %}">Login</a>
+					<a class="nav-link" href="{% url 'signup' %}">Signup</a>
+				{% endif %}
+			</div>
+		</div>
+	</nav>
+
+	<div class="container">
+		{% if messages %}
+			{% for message in messages %}
+				<div class="alert alert-success">{{ message }}</div>
+			{% endfor %}
+		{% endif %}
+
+		<div class="row justify-content-center">
+			<div class="col-md-6">
+				<div class="card shadow-sm">
+					<div class="card-body">
+						<h4 class="card-title mb-3">Register for {{ event.title }}</h4>
+
+						<form method="post">
+							{% csrf_token %}
+
+							{% if form.non_field_errors %}
+								<div class="alert alert-danger">{{ form.non_field_errors }}</div>
+							{% endif %}
+
+							<div class="mb-3">
+								<label class="form-label" for="id_name">Name</label>
+								{{ form.name }}
+								{% if form.name.errors %}
+									<div class="text-danger small">{{ form.name.errors|striptags }}</div>
+								{% endif %}
+							</div>
+
+							<div class="mb-3">
+								<label class="form-label" for="id_email">Email</label>
+								{{ form.email }}
+								{% if form.email.errors %}
+									<div class="text-danger small">{{ form.email.errors|striptags }}</div>
+								{% endif %}
+							</div>
+
+							<button type="submit" class="btn btn-primary">Submit</button>
+							<a href="{% url 'event_detail' event.id %}" class="btn btn-secondary">Back</a>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

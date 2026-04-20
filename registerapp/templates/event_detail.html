@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}{{ event.title }}{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="card card-modern overflow-hidden mb-4">
+      {% if event.image %}
+        <img src="{{ event.image.url }}" class="w-100" alt="{{ event.title }}" style="max-height: 420px; object-fit: cover;">
+      {% endif %}
+      <div class="card-body p-4 p-lg-5">
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+          <span class="badge-modern">{% if event.category %}{{ event.category.name }}{% else %}General{% endif %}</span>
+          <span class="badge rounded-pill {{ event.status_badge_class }}">{{ event.status_label }}</span>
+          <span class="badge rounded-pill text-bg-light border">{{ registration_count }} Registered</span>
+          <span class="badge rounded-pill text-bg-light border">{{ seats_left }} Seats Left</span>
+        </div>
+
+        <h1 class="page-title mb-3">{{ event.title }}</h1>
+        <p class="muted-text mb-4">{{ event.description }}</p>
+
+        <div class="mb-4">
+          <div class="d-flex justify-content-between small mb-1">
+            <span>Seats filled</span>
+            <span>{{ registration_count }} / {{ event.capacity }}</span>
+          </div>
+          <div class="progress" role="progressbar" aria-valuenow="{{ seats_percentage }}" aria-valuemin="0" aria-valuemax="100" style="height: 10px;">
+            <div class="progress-bar" style="width: {{ seats_percentage }}%;"></div>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-6"><strong>Date:</strong> {{ event.date }}</div>
+          <div class="col-md-6"><strong>Time:</strong> {% if event.time %}{{ event.time }}{% else %}TBA{% endif %}</div>
+          <div class="col-md-6"><strong>Venue:</strong> {{ event.venue|default:'TBA' }}</div>
+          <div class="col-md-6"><strong>City:</strong> {% if event.city %}{{ event.city.name }}{% else %}TBA{% endif %}</div>
+          <div class="col-md-6"><strong>Country:</strong> {% if event.country %}{{ event.country.name }}{% else %}TBA{% endif %}</div>
+          <div class="col-md-6"><strong>Organizer:</strong> {% if event.organizer %}<a href="{% url 'organizer_profile' event.organizer.id %}">{{ event.organizer.username }}</a>{% else %}Unknown{% endif %}</div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          {% if user.is_authenticated %}
+            <a class="btn btn-modern" href="{% url 'register_event' event.id %}">Register Now</a>
+            <form method="post" action="{% url 'toggle_bookmark' event.id %}">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button class="btn btn-outline-secondary" type="submit">{% if is_bookmarked %}Saved{% else %}Save Event{% endif %}</button>
+            </form>
+          {% else %}
+            <a class="btn btn-modern" href="{% url 'login' %}?next={% url 'register_event' event.id %}">Login to Register</a>
+          {% endif %}
+          <a class="btn btn-outline-secondary" href="{% url 'event_list' %}">Back to Events</a>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-outline-dark" type="button" onclick="copyEventLink()">Copy Link</button>
+          <a class="btn btn-outline-success" target="_blank" href="https://wa.me/?text=Check%20this%20event:%20{{ share_url|urlencode }}">WhatsApp Share</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-modern">
+      <div class="card-body p-4">
+        <h4 class="fw-semibold mb-3">Related Events</h4>
+        <div class="row g-3">
+          {% for item in related_events %}
+            <div class="col-12 col-md-4">
+              <div class="card h-100 border">
+                <div class="card-body">
+                  <h6 class="fw-semibold">{{ item.title }}</h6>
+                  <p class="small muted-text mb-2">{{ item.date }}{% if item.city %} | {{ item.city.name }}{% endif %}</p>
+                  <a href="{% url 'event_detail' item.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                </div>
+              </div>
+            </div>
+          {% empty %}
+            <div class="col-12"><div class="alert alert-light border mb-0">No related events available.</div></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function copyEventLink() {
+    const link = window.location.href;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(link);
+      alert('Event link copied to clipboard.');
+    } else {
+      window.prompt('Copy this link:', link);
+    }
+  }
+</script>
+{% endblock %}

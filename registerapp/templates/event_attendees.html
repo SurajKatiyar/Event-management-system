@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Event Attendees{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="card card-modern">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="page-title mb-0">Attendees: {{ event.title }}</h2>
+          <a class="btn btn-outline-primary" href="{% url 'export_attendees_csv' event.id %}">Export CSV</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Ticket</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+              {% for attendee in attendees %}
+                <tr>
+                  <td>{{ attendee.name }}</td>
+                  <td>{{ attendee.email }}</td>
+                  <td>{{ attendee.phone }}</td>
+                  <td>{{ attendee.ticket_id }}</td>
+                  <td>{% if attendee.is_checked_in %}<span class="badge text-bg-success">Checked In</span>{% else %}<span class="badge text-bg-secondary">Not Checked In</span>{% endif %}</td>
+                  <td>
+                    {% if not attendee.is_checked_in %}
+                      <form method="post" action="{% url 'check_in_attendee' attendee.ticket_id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-success">Check In</button>
+                      </form>
+                    {% else %}
+                      <span class="text-success">Done</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="6"><div class="py-4 text-center muted-text">No attendees yet.</div></td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

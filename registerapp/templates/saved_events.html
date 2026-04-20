@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Saved Events{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="card card-modern">
+      <div class="card-body p-4">
+        <h2 class="page-title mb-4">Saved Events</h2>
+        <div class="row g-4">
+          {% for item in saved_items %}
+            <div class="col-12 col-md-6 col-lg-4">
+              <div class="card card-modern h-100">
+                <div class="card-body p-4">
+                  <h5 class="fw-semibold">{{ item.event.title }}</h5>
+                  <p class="muted-text mb-1">{{ item.event.date }}</p>
+                  <p class="muted-text mb-3">{% if item.event.city %}{{ item.event.city.name }}{% else %}TBA{% endif %}</p>
+                  <a href="{% url 'event_detail' item.event.id %}" class="btn btn-modern">View Details</a>
+                </div>
+              </div>
+            </div>
+          {% empty %}
+            <div class="col-12"><div class="card card-modern"><div class="card-body p-5 text-center muted-text">No saved events yet.</div></div></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

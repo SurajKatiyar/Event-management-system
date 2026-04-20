@@ -1,0 +1,25 @@
+# virtual environment
+eventenv/
+
+# python cache
+__pycache__/
+*.pyc
+
+# database
+db.sqlite3
+
+# environment variables
+.env
+
+# uploaded media files
+media/
+
+# static collected files
+staticfiles/
+
+# vscode settings
+.vscode/
+
+# system files
+.DS_Store
+Thumbs.db

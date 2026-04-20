@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}My Events{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="card card-modern">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="page-title mb-0">My Events</h2>
+          <a class="btn btn-modern" href="{% url 'create_event' %}">Create Event</a>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr><th>Title</th><th>Date</th><th>Category</th><th>Capacity</th><th>Registrations</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {% for event in events %}
+                <tr>
+                  <td>{{ event.title }}</td>
+                  <td>{{ event.date }}</td>
+                  <td>{% if event.category %}{{ event.category.name }}{% else %}General{% endif %}</td>
+                  <td>{{ event.capacity }}</td>
+                  <td>{{ event.registration_count }}</td>
+                  <td class="d-flex flex-wrap gap-2">
+                    <a class="btn btn-sm btn-outline-primary" href="{% url 'edit_event' event.id %}">Edit</a>
+                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'event_attendees' event.id %}">Attendees</a>
+                    <a class="btn btn-sm btn-outline-danger" href="{% url 'delete_event' event.id %}">Delete</a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="6"><div class="py-4 text-center muted-text">You have not created any events yet.</div></td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

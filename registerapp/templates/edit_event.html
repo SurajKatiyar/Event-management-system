@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Edit Event{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card card-modern">
+          <div class="card-body p-4 p-lg-5">
+            <h2 class="page-title mb-2">Edit Event</h2>
+            <p class="muted-text mb-4">Update the event details for {{ event.title }}.</p>
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              {{ form.as_p }}
+              <div class="d-flex gap-2 mt-4">
+                <button class="btn btn-modern" type="submit">Update Event</button>
+                <a class="btn btn-outline-secondary" href="{% url 'my_events' %}">Back</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

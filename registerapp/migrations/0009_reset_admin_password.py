@@ -5,7 +5,7 @@ def reset_admin_password(apps, schema_editor):
     User = apps.get_model("auth", "User")
 
     try:
-        user = User.objects.get(username="surajadmin")
+        user = User.objects.get(username="suraj")
         user.set_password("@Admin2k26ofdjangoevent.")
         user.save()
     except User.DoesNotExist:

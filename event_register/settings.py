@@ -35,10 +35,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-!j#+$hqqa1&#@!8y2um%2a$yw)=i7xlnk_#0u=()pijo#!l_n&')
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = _env_bool('DJANGO_DEBUG', True)
+DEBUG = _env_bool('DJANGO_DEBUG', False)
+
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'dev-insecure-secret-key'
+    else:
+        raise RuntimeError('DJANGO_SECRET_KEY environment variable is required when DJANGO_DEBUG is False.')
 
 ALLOWED_HOSTS = _env_list('DJANGO_ALLOWED_HOSTS', '')
 
@@ -57,6 +62,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -140,7 +146,23 @@ EMAIL_BACKEND = os.getenv('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.con
 
 SITE_BASE_URL = os.getenv('SITE_BASE_URL', '')
 
+CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS', '')
+
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+if not DEBUG:
+    STORAGES = {
+        'default': {
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        },
+    }
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'

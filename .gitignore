@@ -1,8 +1,10 @@
 # virtual environment
 eventenv/
+.venv/
 
 # python cache
 __pycache__/
+**/__pycache__/
 *.pyc
 
 # database
@@ -10,15 +12,23 @@ db.sqlite3
 
 # environment variables
 .env
+.env.*
 
 # uploaded media files
 media/
+
+# git internals and backups
+.git/
+*.zip
 
 # static collected files
 staticfiles/
 
 # vscode settings
 .vscode/
+
+# node dependencies
+node_modules/
 
 # system files
 .DS_Store

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
 
 
 def _env_bool(name, default=False):
@@ -26,6 +27,31 @@ def _env_list(name, default=''):
     if not value:
         return []
     return [item.strip() for item in value.split(',') if item.strip()]
+
+
+def _database_from_url(database_url):
+    parsed = urlparse(database_url)
+    if parsed.scheme not in {'postgres', 'postgresql'}:
+        return None
+
+    db_options = {}
+    query_params = parse_qs(parsed.query)
+    sslmode = query_params.get('sslmode', [os.getenv('DB_SSLMODE', 'require')])[0]
+    if sslmode:
+        db_options['sslmode'] = sslmode
+
+    db_config = {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': unquote(parsed.path.lstrip('/')),
+        'USER': unquote(parsed.username or ''),
+        'PASSWORD': unquote(parsed.password or ''),
+        'HOST': parsed.hostname or '',
+        'PORT': str(parsed.port or ''),
+        'CONN_MAX_AGE': int(os.getenv('DJANGO_CONN_MAX_AGE', '60')),
+    }
+    if db_options:
+        db_config['OPTIONS'] = db_options
+    return db_config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -101,6 +127,12 @@ DATABASES = {
     }
 }
 
+DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
+if DATABASE_URL:
+    parsed_database = _database_from_url(DATABASE_URL)
+    if parsed_database:
+        DATABASES['default'] = parsed_database
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -140,7 +172,7 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
 
 EMAIL_BACKEND = os.getenv('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 

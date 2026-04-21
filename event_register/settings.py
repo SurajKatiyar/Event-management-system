@@ -189,6 +189,7 @@ X_FRAME_OPTIONS = 'DENY'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 if not DEBUG:
+    WHITENOISE_MANIFEST_STRICT = False
     STORAGES = {
         'default': {
             'BACKEND': 'django.core.files.storage.FileSystemStorage',

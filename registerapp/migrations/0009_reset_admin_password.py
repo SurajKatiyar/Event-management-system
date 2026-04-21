@@ -1,15 +1,17 @@
 from django.db import migrations
 
 
-def reset_admin_password(apps, schema_editor):
+def reset_password(apps, schema_editor):
     User = apps.get_model("auth", "User")
 
-    try:
-        user = User.objects.get(username="surajadmin")
-        user.set_password("@Admin2k26ofdjangoevent.")
+    users = User.objects.filter(username="surajadmin")
+
+    if users.exists():
+        user = users.first()
+        user.set_password("Suraj@Admin12345")
+        user.is_staff = True
+        user.is_superuser = True
         user.save()
-    except User.DoesNotExist:
-        pass
 
 
 class Migration(migrations.Migration):
@@ -19,5 +21,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(reset_admin_password),
+        migrations.RunPython(reset_password),
     ]

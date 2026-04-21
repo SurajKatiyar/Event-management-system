@@ -58,9 +58,13 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="mt-5 py-4 border-top bg-white">
-    <div class="container text-center text-muted">
-      © 2026 EventHub
+  <footer class="site-footer mt-5 py-4 border-top bg-white">
+    <div class="container">
+      <div class="footer-card text-center text-muted mx-auto">
+        <p class="footer-project mb-1">EventHub</p>
+        <p class="mb-1">Copyright © {% now "Y" %}. All rights reserved.</p>
+        <p class="mb-0">Created by Suraj Katiyar and Nikhil Yadav</p>
+      </div>
     </div>
   </footer>
 

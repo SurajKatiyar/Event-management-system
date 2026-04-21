@@ -147,7 +147,9 @@ class registration(models.Model):
             super().save(update_fields=['qr_code'])
 
     def generate_qr_payload(self):
-        return f"registration:{self.id}"
+        base_url = (settings.SITE_BASE_URL or '').rstrip('/')
+        ticket_url = f"{base_url}/ticket/{self.ticket_id}/" if base_url else f"/ticket/{self.ticket_id}/"
+        return ticket_url
 
     def generate_qr_image(self):
         return qrcode.make(self.generate_qr_payload())

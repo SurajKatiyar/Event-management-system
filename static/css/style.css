@@ -117,6 +117,26 @@ body {
   color: #64748B;
 }
 
+.site-footer {
+  background: transparent !important;
+}
+
+.footer-card {
+  max-width: 620px;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  background: #FFFFFF;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+.footer-project {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #0F172A;
+}
+
 .form-control,
 .form-select {
   border-radius: 12px;
@@ -348,6 +368,16 @@ body.dark .progress-bar {
 body.dark footer {
   background: #0F172A !important;
   border-color: rgba(148, 163, 184, 0.12) !important;
+}
+
+body.dark .footer-card {
+  background: #111B2E;
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.24);
+}
+
+body.dark .footer-project {
+  color: #F8FBFF;
 }
 
 body.dark .text-secondary,

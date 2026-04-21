@@ -15,7 +15,7 @@ def reset_admin_password(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("registerapp", "0007_registration_attendance_time_registration_attended"),
+        ("registerapp", "0009_registration_attendance_time_registration_attended"),
     ]
 
     operations = [

@@ -2,6 +2,7 @@ from django.apps import AppConfig
 
 
 class RegisterappConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
     name = "registerapp"
 
     def ready(self):
@@ -10,14 +11,15 @@ class RegisterappConfig(AppConfig):
 
         User = get_user_model()
 
-        admin_username = os.getenv("surajadmin")
-        admin_email = os.getenv("surajkatiyar753@gmail.com")
-        admin_password = os.getenv("@Admindjango2k26pass.")
+        username = os.getenv("ADMIN_USERNAME")
+        email = os.getenv("ADMIN_EMAIL")
+        password = os.getenv("ADMIN_PASSWORD")
 
-        if admin_username and admin_password:
-            if not User.objects.filter(username=admin_username).exists():
+        # create admin only if values exist
+        if username and password:
+            if not User.objects.filter(username=username).exists():
                 User.objects.create_superuser(
-                    username=admin_username,
-                    email=admin_email,
-                    password=admin_password
+                    username=username,
+                    email=email,
+                    password=password
                 )

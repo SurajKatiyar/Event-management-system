@@ -19,7 +19,15 @@
               </div>
             </div>
           {% empty %}
-            <div class="col-12"><div class="card card-modern"><div class="card-body p-5 text-center muted-text">No saved events yet.</div></div></div>
+            <div class="col-12">
+              <div class="card card-modern">
+                <div class="card-body p-5 text-center">
+                  <h5 class="fw-semibold mb-2">No saved events yet.</h5>
+                  <p class="muted-text mb-3">Save events you like so you can come back to them later.</p>
+                  <a class="btn btn-modern" href="{% url 'event_list' %}">Browse Events</a>
+                </div>
+              </div>
+            </div>
           {% endfor %}
         </div>
       </div>

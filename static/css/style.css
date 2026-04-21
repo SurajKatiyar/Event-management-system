@@ -141,18 +141,30 @@ body.dark .navbar-premium {
   box-shadow: 0 1px 0 rgba(148, 163, 184, 0.08);
 }
 
-body.dark .navbar-brand,
-body.dark .navbar-premium .nav-link {
-  color: #E5EEF8 !important;
+body.dark .navbar-brand {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  background: linear-gradient(90deg, #F8FAFF 0%, #BFDBFE 45%, #7DD3FC 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 1px 10px rgba(125, 211, 252, 0.2);
 }
 
-body.dark .navbar-brand {
-  color: #FFFFFF !important;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+body.dark .navbar-premium .nav-link {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  background: linear-gradient(90deg, #E2E8F0 0%, #BFDBFE 55%, #93C5FD 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 body.dark .navbar-premium .nav-link:hover {
-  color: #93C5FD !important;
+  background: linear-gradient(90deg, #FFFFFF 0%, #DBEAFE 50%, #67E8F9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 body.dark .navbar-premium .nav-link,

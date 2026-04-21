@@ -7,8 +7,35 @@
       <div class="col-lg-7">
         <div class="card card-modern">
           <div class="card-body p-4 p-lg-5">
-            <h2 class="page-title mb-2">Complete Registration</h2>
-            <p class="muted-text mb-4">Register for {{ event.title }} by filling in your details.</p>
+            <div class="mb-4">
+              <span class="badge-modern mb-3 d-inline-block">Registration</span>
+              <h2 class="page-title mb-2">Complete Registration</h2>
+              <p class="muted-text mb-0">You’re booking a spot for {{ event.title }}. Review the event details below, then submit your information.</p>
+            </div>
+
+            <div class="card border mb-4">
+              <div class="card-body p-3 p-md-4">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                  <div>
+                    <h5 class="fw-semibold mb-1">{{ event.title }}</h5>
+                    <p class="muted-text mb-2">
+                      {% if event.city %}{{ event.city.name }}{% else %}TBA{% endif %}
+                      {% if event.country %} • {{ event.country.name }}{% endif %}
+                    </p>
+                  </div>
+                  <span class="badge rounded-pill text-bg-light border">{{ event.status_label }}</span>
+                </div>
+                <div class="row g-2 small mt-1">
+                  <div class="col-md-4"><strong>Date:</strong> {{ event.date }}</div>
+                  <div class="col-md-4"><strong>Time:</strong> {% if event.time %}{{ event.time }}{% else %}TBA{% endif %}</div>
+                  <div class="col-md-4"><strong>Venue:</strong> {{ event.venue|default:'TBA' }}</div>
+                  <div class="col-md-4"><strong>Seats left:</strong> {{ event.seats_left }}</div>
+                  <div class="col-md-4"><strong>Category:</strong> {% if event.category %}{{ event.category.name }}{% else %}General{% endif %}</div>
+                  <div class="col-md-4"><strong>Deadline:</strong> {{ event.registration_deadline|default:'TBA' }}</div>
+                </div>
+              </div>
+            </div>
+
             <form method="post">
               {% csrf_token %}
               {% if form.non_field_errors %}
@@ -26,6 +53,9 @@
                 <div class="col-md-6">{{ form.city.label_tag }}{{ form.city }}</div>
                 <div class="col-md-6">{{ form.organization.label_tag }}{{ form.organization }}</div>
                 <div class="col-12">{{ form.note.label_tag }}{{ form.note }}</div>
+              </div>
+              <div class="alert alert-info mt-4 mb-0">
+                Your ticket and QR code will be sent to the email address you enter above.
               </div>
               <div class="d-flex gap-2 mt-4">
                 <button type="submit" class="btn btn-modern">Submit Registration</button>

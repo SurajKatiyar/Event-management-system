@@ -21,7 +21,13 @@
                   <td><a class="btn btn-sm btn-modern" href="{% url 'ticket' item.ticket_id %}">View Ticket</a></td>
                 </tr>
               {% empty %}
-                <tr><td colspan="5"><div class="py-4 text-center muted-text">No tickets yet.</div></td></tr>
+                <tr><td colspan="5">
+                  <div class="py-5 text-center">
+                    <h5 class="fw-semibold mb-2">No tickets yet.</h5>
+                    <p class="muted-text mb-3">Browse events and register to see your tickets here.</p>
+                    <a class="btn btn-modern" href="{% url 'event_list' %}">Find Events</a>
+                  </div>
+                </td></tr>
               {% endfor %}
             </tbody>
           </table>

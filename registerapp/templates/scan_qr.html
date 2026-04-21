@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Scan Attendance QR{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card card-modern">
+          <div class="card-body p-4 p-lg-5">
+            <h2 class="page-title mb-2">QR Attendance Scanner</h2>
+            <p class="muted-text mb-4">Scan attendee QR codes on event day to mark attendance automatically.</p>
+
+            {% if not organizer_events and not request.user.is_staff %}
+              <div class="alert alert-warning mb-0">
+                You are not hosting any events yet. Create an event first to use attendance scanning.
+              </div>
+            {% else %}
+              <div class="alert alert-info">
+                QR format expected: <strong>registration:&lt;id&gt;</strong>
+              </div>
+
+              <div id="scanner" class="border rounded-4 p-2 mb-3" style="min-height: 320px;"></div>
+
+              <div id="scanStatus" class="alert d-none" role="alert"></div>
+
+              <div class="small muted-text">
+                Keep your camera steady and hold the QR code inside the scanner box.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+  (function () {
+    const scannerElement = document.getElementById('scanner');
+    const statusElement = document.getElementById('scanStatus');
+    if (!scannerElement || !statusElement) return;
+
+    const csrfToken = '{{ csrf_token }}';
+    let locked = false;
+    let lastScanText = '';
+    let lastScanAt = 0;
+
+    function showStatus(type, text) {
+      statusElement.className = 'alert alert-' + type;
+      statusElement.textContent = text;
+      statusElement.classList.remove('d-none');
+    }
+
+    function parseRegistrationId(decodedText) {
+      if (!decodedText) return null;
+      const trimmed = decodedText.trim();
+      const match = trimmed.match(/^registration:(\d+)$/i);
+      if (!match) return null;
+      return match[1];
+    }
+
+    async function markAttendance(registrationId) {
+      try {
+        const response = await fetch(`/mark-attendance/${registrationId}/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          showStatus('danger', data.message || 'Unable to mark attendance.');
+          return;
+        }
+
+        if (data.status === 'already_marked') {
+          showStatus('warning', data.message || 'Attendance already marked.');
+        } else {
+          showStatus('success', data.message || 'Attendance marked successfully.');
+        }
+      } catch (error) {
+        showStatus('danger', 'Scanner request failed. Please try again.');
+      }
+    }
+
+    function shouldIgnoreDuplicate(decodedText) {
+      const now = Date.now();
+      if (decodedText === lastScanText && now - lastScanAt < 2500) {
+        return true;
+      }
+      lastScanText = decodedText;
+      lastScanAt = now;
+      return false;
+    }
+
+    function onScanSuccess(decodedText) {
+      if (locked || shouldIgnoreDuplicate(decodedText)) {
+        return;
+      }
+
+      const registrationId = parseRegistrationId(decodedText);
+      if (!registrationId) {
+        showStatus('danger', 'Invalid QR code. Expected format: registration:<id>.');
+        return;
+      }
+
+      locked = true;
+      markAttendance(registrationId).finally(function () {
+        setTimeout(function () {
+          locked = false;
+        }, 1200);
+      });
+    }
+
+    const html5QrCode = new Html5Qrcode('scanner');
+    Html5Qrcode.getCameras().then(function (devices) {
+      if (!devices || devices.length === 0) {
+        showStatus('danger', 'No camera found for scanning.');
+        return;
+      }
+
+      html5QrCode.start(
+        devices[0].id,
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        onScanSuccess,
+        function () {}
+      ).catch(function () {
+        showStatus('danger', 'Unable to start camera scanner.');
+      });
+    }).catch(function () {
+      showStatus('danger', 'Camera permission denied or unavailable.');
+    });
+  })();
+</script>
+{% endblock %}

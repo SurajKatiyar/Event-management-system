@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.utils import timezone
 
-from .models import City, Country, event as Event, registration as Registration
+from .models import Category, City, Country, event as Event, registration as Registration
 
 
 class SignupForm(UserCreationForm):
@@ -64,9 +64,22 @@ class RegistrationForm(forms.ModelForm):
 
 
 class EventForm(forms.ModelForm):
+    new_category = forms.CharField(
+        required=False,
+        max_length=100,
+        widget=forms.TextInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'Type a new category (optional)',
+            }
+        ),
+        help_text='If provided, this will be created and used for this event.',
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['city'].queryset = City.objects.none()
+        self.fields['category'].queryset = Category.objects.order_by('name')
 
         if self.data.get('country'):
             self.fields['city'].queryset = City.objects.filter(country_id=self.data.get('country')).order_by('name')
@@ -104,6 +117,9 @@ class EventForm(forms.ModelForm):
             'registration_deadline': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
 
+    def clean_new_category(self):
+        return self.cleaned_data.get('new_category', '').strip()
+
     def clean_capacity(self):
         capacity = self.cleaned_data.get('capacity')
         if capacity is not None and capacity < 1:
@@ -116,6 +132,7 @@ class EventForm(forms.ModelForm):
         registration_deadline = cleaned_data.get('registration_deadline')
         country = cleaned_data.get('country')
         city = cleaned_data.get('city')
+        new_category = cleaned_data.get('new_category')
 
         if event_date and event_date < timezone.localdate():
             self.add_error('date', 'Event date cannot be in the past.')
@@ -126,4 +143,23 @@ class EventForm(forms.ModelForm):
         if city and country and city.country_id != country.id:
             self.add_error('city', 'Selected city does not belong to selected country.')
 
+        if new_category and len(new_category) < 2:
+            self.add_error('new_category', 'New category must be at least 2 characters long.')
+
         return cleaned_data
+
+    def save(self, commit=True):
+        event_instance = super().save(commit=False)
+        new_category = self.cleaned_data.get('new_category')
+
+        if new_category:
+            category = Category.objects.filter(name__iexact=new_category).first()
+            if not category:
+                category = Category.objects.create(name=new_category)
+            event_instance.category = category
+
+        if commit:
+            event_instance.save()
+            self.save_m2m()
+
+        return event_instance

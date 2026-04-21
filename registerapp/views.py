@@ -8,7 +8,7 @@ from django.core.mail import EmailMessage
 from django.core.paginator import Paginator
 from django.db import IntegrityError, transaction
 from django.db.models import Count, ExpressionWrapper, F, IntegerField
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -57,6 +57,11 @@ def event_list(request):
     categories = Category.objects.all().order_by('name')
     countries = Country.objects.all().order_by('name')
     cities = City.objects.filter(country_id=country_id).order_by('name') if country_id else City.objects.none()
+    featured_categories = Category.objects.annotate(event_count=Count('events')).order_by('-event_count', 'name')[:6]
+    featured_events = Event.objects.select_related('category', 'country', 'city', 'organizer').order_by('date', 'time')[:3]
+    total_events_count = Event.objects.count()
+    total_categories_count = Category.objects.count()
+    total_cities_count = City.objects.count()
 
     saved_event_ids = set()
     if request.user.is_authenticated:
@@ -77,6 +82,11 @@ def event_list(request):
             'selected_city': city_id,
             'selected_sort': sort_by,
             'saved_event_ids': saved_event_ids,
+            'featured_categories': featured_categories,
+            'featured_events': featured_events,
+            'total_events_count': total_events_count,
+            'total_categories_count': total_categories_count,
+            'total_cities_count': total_cities_count,
         },
     )
 
@@ -228,8 +238,16 @@ def download_ticket(request, ticket_id):
 @login_required
 def dashboard(request):
     my_tickets = Registration.objects.select_related('event').filter(user=request.user).order_by('-id')
-    my_created_events = Event.objects.filter(organizer=request.user).order_by('date', 'time')
+    my_created_events = Event.objects.filter(organizer=request.user).annotate(registration_count=Count('registration')).order_by('date', 'time')
+    hosted_registrations = sum(item.registration_count for item in my_created_events)
     saved_events_count = SavedEvent.objects.filter(user=request.user).count()
+
+    organizer_event_ids = my_created_events.values_list('id', flat=True)
+    attendance_base_qs = Registration.objects.filter(event_id__in=organizer_event_ids)
+    present_count = attendance_base_qs.filter(attended=True).count()
+    total_registrations_count = attendance_base_qs.count()
+    absent_count = max(total_registrations_count - present_count, 0)
+
     return render(
         request,
         'dashboard.html',
@@ -237,6 +255,12 @@ def dashboard(request):
             'my_tickets': my_tickets,
             'my_created_events': my_created_events,
             'saved_events_count': saved_events_count,
+            'hosted_registrations': hosted_registrations,
+            'upcoming_tickets': my_tickets[:3],
+            'upcoming_created_events': my_created_events[:3],
+            'present_count': present_count,
+            'absent_count': absent_count,
+            'total_registrations_count': total_registrations_count,
         },
     )
 
@@ -335,14 +359,62 @@ def check_in_attendee(request, ticket_id):
         messages.error(request, 'Only organizer can check in attendees.')
         return redirect('event_list')
 
-    if registration.is_checked_in:
+    if registration.attended:
         messages.info(request, f'{registration.name} is already checked in.')
         return redirect('event_attendees', event_id=registration.event.id)
 
+    now = timezone.now()
     registration.is_checked_in = True
-    registration.save(update_fields=['is_checked_in'])
+    registration.attended = True
+    registration.attendance_time = now
+    registration.save(update_fields=['is_checked_in', 'attended', 'attendance_time'])
     messages.success(request, f'{registration.name} marked as present.')
     return redirect('event_attendees', event_id=registration.event.id)
+
+
+def _can_manage_attendance(user, registration_obj):
+    return user.is_staff or registration_obj.event.organizer_id == user.id
+
+
+@login_required
+def scan_page_view(request):
+    organizer_events = Event.objects.filter(organizer=request.user).order_by('date', 'time')
+
+    if not request.user.is_staff and not organizer_events.exists():
+        messages.error(request, 'Only hosts or admins can access QR attendance scanner.')
+        return redirect('dashboard')
+
+    return render(request, 'scan_qr.html', {'organizer_events': organizer_events})
+
+
+@login_required
+@require_POST
+def mark_attendance_view(request, id):
+    registration_obj = get_object_or_404(Registration.objects.select_related('event'), id=id)
+
+    if not _can_manage_attendance(request.user, registration_obj):
+        return JsonResponse({'ok': False, 'message': 'You are not allowed to mark attendance for this ticket.'}, status=403)
+
+    if registration_obj.attended:
+        attendance_time_text = registration_obj.attendance_time.strftime('%Y-%m-%d %H:%M') if registration_obj.attendance_time else 'already marked'
+        return JsonResponse({'ok': True, 'status': 'already_marked', 'message': f'Already marked present ({attendance_time_text}).'})
+
+    now = timezone.now()
+    registration_obj.attended = True
+    registration_obj.is_checked_in = True
+    registration_obj.attendance_time = now
+    registration_obj.save(update_fields=['attended', 'is_checked_in', 'attendance_time'])
+
+    return JsonResponse(
+        {
+            'ok': True,
+            'status': 'success',
+            'message': f'Attendance marked for {registration_obj.name}.',
+            'registration_id': registration_obj.id,
+            'event_id': registration_obj.event_id,
+            'attendance_time': now.strftime('%Y-%m-%d %H:%M:%S'),
+        }
+    )
 
 
 def organizer_profile(request, organizer_id):

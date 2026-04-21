@@ -15,6 +15,25 @@ from django.utils import timezone
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def __str__(self):
         return self.name
 
@@ -93,6 +112,8 @@ class registration(models.Model):
     ticket_id = models.CharField(max_length=32, unique=True, blank=True, null=True)
     qr_code = models.ImageField(upload_to='qr_codes/', blank=True, null=True)
     is_checked_in = models.BooleanField(default=False)
+    attended = models.BooleanField(default=False)
+    attendance_time = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -106,20 +127,30 @@ class registration(models.Model):
         if not self.ticket_id:
             self.ticket_id = self.generate_unique_ticket_id()
 
+        if self.attended and not self.is_checked_in:
+            self.is_checked_in = True
+        elif self.is_checked_in and not self.attended:
+            self.attended = True
+
         super().save(*args, **kwargs)
 
         if not self.qr_code:
-            qr_text = f"{settings.SITE_BASE_URL}/ticket/{self.ticket_id}/"
-            qr_img = qrcode.make(qr_text)
+            qr_img = self.generate_qr_image()
 
             buffer = BytesIO()
             qr_img.save(buffer, format='PNG')
 
             event_slug = slugify(self.event.title)
-            file_name = f"ticket_{event_slug}_{self.ticket_id}.png"
+            file_name = f"ticket_{event_slug}_{self.id}.png"
             self.qr_code.save(file_name, ContentFile(buffer.getvalue()), save=False)
 
             super().save(update_fields=['qr_code'])
+
+    def generate_qr_payload(self):
+        return f"registration:{self.id}"
+
+    def generate_qr_image(self):
+        return qrcode.make(self.generate_qr_payload())
 
     def generate_unique_ticket_id(self):
         ticket_id = secrets.token_urlsafe(8).replace('-', '').replace('_', '').upper()

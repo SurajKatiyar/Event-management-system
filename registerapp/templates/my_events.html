@@ -29,7 +29,13 @@
                   </td>
                 </tr>
               {% empty %}
-                <tr><td colspan="6"><div class="py-4 text-center muted-text">You have not created any events yet.</div></td></tr>
+                <tr><td colspan="6">
+                  <div class="py-5 text-center">
+                    <h5 class="fw-semibold mb-2">You have not created any events yet.</h5>
+                    <p class="muted-text mb-3">Start with a simple event and add your own category if needed.</p>
+                    <a class="btn btn-modern" href="{% url 'create_event' %}">Create Your First Event</a>
+                  </div>
+                </td></tr>
               {% endfor %}
             </tbody>
           </table>

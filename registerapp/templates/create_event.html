@@ -11,7 +11,33 @@
             <p class="muted-text mb-4">Publish a clean, professional event listing.</p>
             <form method="post" enctype="multipart/form-data">
               {% csrf_token %}
-              {{ form.as_p }}
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+              {% endif %}
+              {% for field in form %}
+                {% if field.errors %}
+                  <div class="alert alert-danger py-2 mb-2">{{ field.label }}: {{ field.errors|striptags }}</div>
+                {% endif %}
+              {% endfor %}
+
+              <div class="row g-3">
+                <div class="col-12">{{ form.title.label_tag }}{{ form.title }}</div>
+                <div class="col-12">{{ form.description.label_tag }}{{ form.description }}</div>
+                <div class="col-md-6">{{ form.date.label_tag }}{{ form.date }}</div>
+                <div class="col-md-6">{{ form.time.label_tag }}{{ form.time }}</div>
+                <div class="col-md-6">{{ form.country.label_tag }}{{ form.country }}</div>
+                <div class="col-md-6">{{ form.city.label_tag }}{{ form.city }}</div>
+                <div class="col-md-6">{{ form.venue.label_tag }}{{ form.venue }}</div>
+                <div class="col-md-6">{{ form.capacity.label_tag }}{{ form.capacity }}</div>
+                <div class="col-md-6">{{ form.category.label_tag }}{{ form.category }}</div>
+                <div class="col-md-6">
+                  {{ form.new_category.label_tag }}{{ form.new_category }}
+                  <div class="form-text">{{ form.new_category.help_text }}</div>
+                </div>
+                <div class="col-md-6">{{ form.registration_deadline.label_tag }}{{ form.registration_deadline }}</div>
+                <div class="col-md-6">{{ form.image.label_tag }}{{ form.image }}</div>
+              </div>
+
               <div class="d-flex gap-2 mt-4">
                 <button class="btn btn-modern" type="submit">Create Event</button>
                 <a class="btn btn-outline-secondary" href="{% url 'my_events' %}">Back</a>

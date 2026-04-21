@@ -126,3 +126,25 @@ class FormValidationTests(TestCase):
 		)
 		self.assertFalse(form.is_valid())
 		self.assertIn('registration_deadline', form.errors)
+
+	def test_event_form_creates_new_category_and_assigns_it(self):
+		form = EventForm(
+			data={
+				'title': 'Custom Category Event',
+				'description': 'desc',
+				'date': (timezone.localdate() + timedelta(days=5)).isoformat(),
+				'time': '10:00',
+				'country': self.country.id,
+				'city': self.city.id,
+				'venue': 'Venue',
+				'capacity': 10,
+				'category': '',
+				'new_category': 'Startup',
+				'registration_deadline': (timezone.localdate() + timedelta(days=4)).isoformat(),
+			}
+		)
+		self.assertTrue(form.is_valid())
+		event_obj = form.save(commit=False)
+		self.assertIsNotNone(event_obj.category)
+		self.assertEqual(event_obj.category.name, 'Startup')
+		self.assertTrue(Category.objects.filter(name='Startup').exists())

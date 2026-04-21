@@ -4,17 +4,67 @@
 <section class="section">
   <div class="container">
     <div class="card card-modern mb-4">
-      <div class="card-body p-4">
-        <h2 class="page-title mb-1">Welcome, {{ request.user.username }}</h2>
-        <p class="muted-text mb-0">Manage your tickets, saved events, and hosted events from one place.</p>
+      <div class="card-body p-4 p-lg-5">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <div>
+            <h2 class="page-title mb-1">Welcome, {{ request.user.username }}</h2>
+            <p class="muted-text mb-0">Manage your tickets, saved events, and hosted events from one place.</p>
+          </div>
+          <a class="btn btn-modern" href="{% url 'event_list' %}">Explore Events</a>
+        </div>
       </div>
     </div>
 
     <div class="row g-4">
-      <div class="col-12 col-md-6 col-lg-3"><div class="dashboard-card card-modern h-100 text-center"><div class="fs-2 fw-bold text-primary mb-2">TK</div><h5>My Tickets</h5><p class="muted-text">{{ my_tickets|length }} active tickets</p><a class="btn btn-modern w-100" href="{% url 'my_tickets' %}">View Tickets</a></div></div>
-      <div class="col-12 col-md-6 col-lg-3"><div class="dashboard-card card-modern h-100 text-center"><div class="fs-2 fw-bold text-success mb-2">EV</div><h5>My Events</h5><p class="muted-text">{{ my_created_events|length }} hosted events</p><a class="btn btn-modern w-100" href="{% url 'my_events' %}">Manage Events</a></div></div>
-      <div class="col-12 col-md-6 col-lg-3"><div class="dashboard-card card-modern h-100 text-center"><div class="fs-2 fw-bold text-info mb-2">SV</div><h5>Saved Events</h5><p class="muted-text">{{ saved_events_count }} saved</p><a class="btn btn-modern w-100" href="{% url 'saved_events' %}">View Saved</a></div></div>
-      <div class="col-12 col-md-6 col-lg-3"><div class="dashboard-card card-modern h-100 text-center"><div class="fs-2 fw-bold text-warning mb-2">ME</div><h5>Profile</h5><p class="muted-text">{{ request.user.email|default:'No email added' }}</p><a class="btn btn-modern w-100" href="{% url 'event_list' %}">Explore Events</a></div></div>
+      <div class="col-12 col-md-6 col-lg-3"><div class="dashboard-card card-modern h-100 text-center"><div class="fs-2 fw-bold text-primary mb-2">TK</div><h5>My Tickets</h5><p class="muted-text mb-2">{{ my_tickets|length }} active tickets</p><a class="btn btn-modern w-100" href="{% url 'my_tickets' %}">View Tickets</a></div></div>
+      <div class="col-12 col-md-6 col-lg-3"><div class="dashboard-card card-modern h-100 text-center"><div class="fs-2 fw-bold text-success mb-2">EV</div><h5>My Events</h5><p class="muted-text mb-2">{{ my_created_events|length }} hosted events</p><a class="btn btn-modern w-100" href="{% url 'my_events' %}">Manage Events</a></div></div>
+      <div class="col-12 col-md-6 col-lg-3"><div class="dashboard-card card-modern h-100 text-center"><div class="fs-2 fw-bold text-info mb-2">SV</div><h5>Saved Events</h5><p class="muted-text mb-2">{{ saved_events_count }} saved</p><a class="btn btn-modern w-100" href="{% url 'saved_events' %}">View Saved</a></div></div>
+      <div class="col-12 col-md-6 col-lg-3"><div class="dashboard-card card-modern h-100 text-center"><div class="fs-2 fw-bold text-warning mb-2">RG</div><h5>Hosted Registrations</h5><p class="muted-text mb-2">{{ hosted_registrations }} attendees</p><a class="btn btn-modern w-100" href="{% url 'my_events' %}">Open Events</a></div></div>
+    </div>
+
+    <div class="row g-4 mt-1">
+      <div class="col-12 col-md-4"><div class="dashboard-card card-modern h-100 text-center"><div class="fs-3 fw-bold text-primary mb-2">{{ total_registrations_count }}</div><h6 class="mb-1">Total Registrations</h6><p class="muted-text mb-0">Across your hosted events</p></div></div>
+      <div class="col-12 col-md-4"><div class="dashboard-card card-modern h-100 text-center"><div class="fs-3 fw-bold text-success mb-2">{{ present_count }}</div><h6 class="mb-1">Present</h6><p class="muted-text mb-0">Marked via check-in/QR</p></div></div>
+      <div class="col-12 col-md-4"><div class="dashboard-card card-modern h-100 text-center"><div class="fs-3 fw-bold text-danger mb-2">{{ absent_count }}</div><h6 class="mb-1">Absent</h6><p class="muted-text mb-0">Not marked attended yet</p></div></div>
+    </div>
+
+    <div class="row g-4 mt-2">
+      <div class="col-12 col-lg-6">
+        <div class="card card-modern h-100">
+          <div class="card-body p-4">
+            <h4 class="fw-semibold mb-3">Upcoming Tickets</h4>
+            {% for item in upcoming_tickets %}
+              <div class="d-flex justify-content-between align-items-center border-bottom py-3">
+                <div>
+                  <div class="fw-semibold">{{ item.event.title }}</div>
+                  <div class="small muted-text">{{ item.event.date }}{% if item.event.city %} • {{ item.event.city.name }}{% endif %}</div>
+                </div>
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'ticket' item.ticket_id %}">Open</a>
+              </div>
+            {% empty %}
+              <div class="alert alert-light border mb-0">No tickets yet. Explore events to get started.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-6">
+        <div class="card card-modern h-100">
+          <div class="card-body p-4">
+            <h4 class="fw-semibold mb-3">Your Hosted Events</h4>
+            {% for item in upcoming_created_events %}
+              <div class="d-flex justify-content-between align-items-center border-bottom py-3">
+                <div>
+                  <div class="fw-semibold">{{ item.title }}</div>
+                  <div class="small muted-text">{{ item.date }} • {{ item.registration_count }} registrations</div>
+                </div>
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'event_attendees' item.id %}">Attendees</a>
+              </div>
+            {% empty %}
+              <div class="alert alert-light border mb-0">No hosted events yet. Create one to start collecting registrations.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>

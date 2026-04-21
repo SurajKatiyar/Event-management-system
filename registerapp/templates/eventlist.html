@@ -4,17 +4,38 @@
 <section class="hero">
   <div class="container text-center">
     <h1 class="fw-bold page-title mb-3">Discover Events Near You</h1>
-    <p class="opacity-75 mb-0">Workshops, hackathons, seminars, community meetups and more.</p>
+    <p class="opacity-75 mb-4">Search by event name, city, country, or category and find something worth attending faster.</p>
+    <div class="row justify-content-center g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="hero-stat">
+          <div class="hero-stat-value">{{ total_events_count }}</div>
+          <div class="hero-stat-label">Events</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="hero-stat">
+          <div class="hero-stat-value">{{ total_categories_count }}</div>
+          <div class="hero-stat-label">Categories</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="hero-stat">
+          <div class="hero-stat-value">{{ total_cities_count }}</div>
+          <div class="hero-stat-label">Cities</div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 {% endblock %}
 {% block content %}
 <section class="section">
   <div class="container">
-    <form method="get" class="row g-3 align-items-end mb-5">
+    <form method="get" class="search-panel card card-modern p-4 mb-4">
+      <div class="row g-3 align-items-end">
       <div class="col-12 col-lg-3">
         <label class="form-label muted-text">Search</label>
-        <input type="text" name="q" class="form-control" value="{{ search_text }}" placeholder="Search event title">
+        <input type="text" name="q" class="form-control" value="{{ search_text }}" placeholder="Search by event, city, or topic">
       </div>
       <div class="col-12 col-md-6 col-lg-2">
         <label class="form-label muted-text">Category</label>
@@ -55,7 +76,43 @@
       <div class="col-12 col-lg-1 d-grid">
         <button type="submit" class="btn btn-modern">Go</button>
       </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2 mt-4 align-items-center justify-content-between">
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'event_list' %}">Clear Filters</a>
+          <span class="small muted-text align-self-center">Quick browse:</span>
+          {% for category in featured_categories %}
+            <a class="btn btn-sm btn-outline-primary" href="?category={{ category.id }}">{{ category.name }}{% if category.event_count %} <span class="opacity-75">({{ category.event_count }})</span>{% endif %}</a>
+          {% endfor %}
+        </div>
+      </div>
     </form>
+
+    <div class="mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h3 class="h5 fw-semibold mb-0">Featured Events</h3>
+        <span class="muted-text small">A quick look at what’s coming up</span>
+      </div>
+      <div class="row g-3">
+        {% for item in featured_events %}
+          <div class="col-12 col-md-4">
+            <div class="card card-modern h-100">
+              <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="badge-modern">{% if item.category %}{{ item.category.name }}{% else %}General{% endif %}</span>
+                  <span class="badge rounded-pill text-bg-light border">{{ item.date }}</span>
+                </div>
+                <h6 class="fw-semibold mb-2">{{ item.title }}</h6>
+                <p class="muted-text mb-3">{% if item.city %}{{ item.city.name }}{% else %}TBA{% endif %}{% if item.venue %} • {{ item.venue }}{% endif %}</p>
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'event_detail' item.id %}">View</a>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <div class="col-12"><div class="card card-modern"><div class="card-body p-4 text-center muted-text">No featured events yet.</div></div></div>
+        {% endfor %}
+      </div>
+    </div>
 
     <div class="row g-4">
       {% for event in events %}
@@ -97,7 +154,8 @@
           <div class="card card-modern">
             <div class="card-body text-center p-5">
               <h5 class="fw-semibold mb-2">No events found</h5>
-              <p class="muted-text mb-0">Try adjusting the filters or search text.</p>
+              <p class="muted-text mb-3">Try a different city, category, or search term.</p>
+              <a class="btn btn-modern" href="{% url 'event_list' %}">Reset Search</a>
             </div>
           </div>
         </div>
